@@ -1,10 +1,10 @@
 name: 刷步数
-
 on:
+  # ===== 验证阶段：每30分钟触发一次（验证定时是否生效）=====
+  # 验证通过后改回: - cron: '6 4,7,10,12,14,23 * * *'
   schedule:
-    - cron: '6 4,7,10,12,14,23 * * *'
+    - cron: '*/30 * * * *'
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,29 +13,34 @@ jobs:
       - name: Checkout codes
         uses: actions/checkout@v5
         with:
-          token: ${{ secrets.PAT }} #此处PAT需要申请，教程详见：README
+          token: ${{ secrets.PAT }}
+
       - name: Update system and install zsh
         run: |
           sudo -E apt-get -qq update
           sudo -E apt-get install zsh -y
-          
+
       - name: 初始化Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.10"
-          
-      - name: 开始
+
+      - name: 开始刷步数（线性增长模式）
         env:
             CONFIG: ${{ secrets.CONFIG }}
             AES_KEY: ${{ secrets.AES_KEY }}
         run: |
           pip3 install requests pytz pycryptodome
+          echo "============================================"
+          echo "  线性步数增长模式已启用"
+          echo "  步数状态文件: step_state.json"
+          echo "============================================"
           python3 main.py
 
-      - name: persist tokens
+      - name: persist tokens and step state
         run: |
           git config user.name github-actions
           git config user.email github-actions@users.noreply.github.com
-          git add .
-          git commit -m "persist tokens trigger by ${{ github.event_name }}"
-          git push origin master
+          git add encrypted_tokens.data step_state.json || true
+          git commit -m "persist data trigger by ${{ github.event_name }} [${{ github.event.schedule }}]" || true
+          git push origin master || true
