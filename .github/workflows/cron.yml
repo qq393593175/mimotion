@@ -1,4 +1,5 @@
 name: Random Cron
+
 on:
   workflow_run:
     workflows: ["刷步数"]
@@ -12,9 +13,9 @@ jobs:
     timeout-minutes: 3
     if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT }} #此处PAT需要申请，教程详见：README
+          token: ${{ secrets.PAT }}
       - name: random cron
         run: |
           source cron_convert.sh
