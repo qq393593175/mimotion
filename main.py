@@ -51,13 +51,20 @@ def save_step_state(state):
         print(f"保存步数状态失败: {e}")
 
 def get_linear_step():
-    """线性增长算法：保证步数严格单调递增"""
+    """
+    线性增长算法：保证步数严格单调递增
+    新增: 最低步数保护(MIN_CURRENT_STEP)，防止状态文件过期导致步数倒退
+    """
     current_time = get_beijing_time()
     current_minute = current_time.hour * 60 + current_time.minute
     target_max = get_int_value_default(config, 'MAX_STEP', 25000)
     target_min = get_int_value_default(config, 'MIN_STEP', 18000)
     min_inc = get_int_value_default(config, 'MIN_INCREMENT', 800)
     max_inc = get_int_value_default(config, 'MAX_INCREMENT', 3000)
+
+    # 【新增】最低步数保护 - 防止步数倒退
+    # 当实际步数已高于状态文件记录时，用此值作为最低基准（在CONFIG中设置 MIN_CURRENT_STEP）
+    min_current_step = get_int_value_default(config, 'MIN_CURRENT_STEP', 0)
 
     state = load_step_state()
 
@@ -74,6 +81,12 @@ def get_linear_step():
     if state is None:
         time_rate = min(current_minute / (22 * 60), 1)
         initial_step = int(target_min * time_rate) + random.randint(0, max(int((target_max - target_min) * time_rate * 0.3), 500))
+
+        # 【新增】应用最低步数保护 - 确保不会从低于实际步数的值开始
+        if min_current_step > 0:
+            initial_step = max(initial_step, min_current_step)
+            print(f"[步数保护] 启用最低步数保护: >= {min_current_step}")
+
         initial_step = max(initial_step, random.randint(500, 2000))
 
         new_state = {
@@ -91,6 +104,11 @@ def get_linear_step():
     last_step = state['current_step']
     last_minute = state['last_minute']
     run_count = state['run_count']
+
+    # 【新增】如果配置了最低步数且比记录值高，提升基准防止倒退
+    if min_current_step > 0 and min_current_step > last_step:
+        print(f"[步数保护] 检测到 MIN_CURRENT_STEP({min_current_step}) > 记录步数({last_step})，调整基准")
+        last_step = min_current_step
 
     time_diff = max(current_minute - last_minute, 1)
     total_window = 22 * 60
