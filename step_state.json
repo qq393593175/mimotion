@@ -1,8 +1,8 @@
 {
-  "current_step": 8860,
-  "last_time": "2026-09-20 22:03:18",
-  "last_minute": 1323,
+  "current_step": 1560,
+  "last_time": "2026-09-21 04:36:31",
+  "last_minute": 276,
   "target_step": 15000,
-  "day_start_time": "2026-09-20 03:14:59",
-  "run_count": 6
+  "day_start_time": "2026-09-21 04:36:31",
+  "run_count": 1
 }
